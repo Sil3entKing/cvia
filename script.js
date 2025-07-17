@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const outputCV = document.getElementById("cv-html");
   const outputLettre = document.getElementById("lettreResultat");
 
-  // Générateur de CV
+  // 👉 Générateur de CV
   document.getElementById("cvForm").addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -43,7 +43,7 @@ Formation : ${formation}`;
       });
   });
 
-  // Générateur de lettre de motivation
+  // 👉 Générateur de lettre de motivation
   document.getElementById("lettreForm").addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -80,16 +80,27 @@ Motivation : ${motivation}`;
       });
   });
 
-  // Traduction en anglais du CV
-document.getElementById("traduireCV").addEventListener("click", function () {
-    const texte = outputCV.innerText;
+  // 👉 Téléchargement PDF
+  document.getElementById("download-pdf").addEventListener("click", function () {
+    const contenu = document.getElementById("cv-html");
+    if (!contenu || !contenu.innerHTML.trim()) {
+      alert("Aucun CV à télécharger !");
+      return;
+    }
+    html2pdf().from(contenu).save("MonCVIA_CV.pdf");
+  });
 
-    if (!texte.trim()) {
-      alert("Aucun contenu à traduire !");
+  // (Optionnel) Traduction — non activée pour l'instant
+  document.getElementById("traduireCV").addEventListener("click", function () {
+    const langue = document.getElementById("langueCV").value;
+    const contenu = document.getElementById("cv-html").innerText;
+
+    if (!contenu || !langue) {
+      alert("Rien à traduire ou langue non sélectionnée.");
       return;
     }
 
-    const promptTrad = `Traduis ce texte en anglais sans rien modifier d’autre :\n\n${texte}`;
+    const prompt = `Traduis ce CV en ${langue} :\n\n${contenu}`;
 
     fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -101,27 +112,17 @@ document.getElementById("traduireCV").addEventListener("click", function () {
         model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "Tu es un traducteur professionnel." },
-          { role: "user", content: promptTrad }
+          { role: "user", content: prompt }
         ]
       })
     })
       .then(res => res.json())
       .then(data => {
-        const traduction = data.choices?.[0]?.message?.content || "❌ Erreur de traduction.";
-        outputCV.innerHTML = traduction.replace(/\n/g, "<br>");
+        const traduit = data.choices?.[0]?.message?.content || "❌ Aucune traduction.";
+        outputCV.innerHTML = traduit.replace(/\n/g, "<br>");
       })
       .catch(error => {
         alert("Erreur de traduction : " + error.message);
       });
-  });
-
-  // Téléchargement PDF
-  document.getElementById("download-pdf").addEventListener("click", function () {
-    const contenu = document.getElementById("cv-html");
-    if (!contenu || !contenu.innerHTML.trim()) {
-      alert("Aucun CV à télécharger !");
-      return;
-    }
-    html2pdf().from(contenu).save("MonCVIA_CV.pdf");
   });
 });
